@@ -1,0 +1,9 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="50" cy="50" r="48" fill="#17201B" stroke="#15803D" stroke-width="4"/>
+  <path d="M30 30H70V55C70 67 55 77 50 80C45 77 30 67 30 55V30Z" fill="#22332A" stroke="#D1AB3E" stroke-width="3"/>
+  <line x1="35" y1="65" x2="65" y2="35" stroke="#D1AB3E" stroke-width="5" stroke-linecap="round"/>
+  <line x1="65" y1="65" x2="35" y2="35" stroke="#D1AB3E" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="50" cy="50" r="11" fill="#DC2626" stroke="#FFFFFF" stroke-width="2"/>
+  <path d="M45 43C49 47 49 53 45 57" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <text x="50" y="94" text-anchor="middle" fill="#D1AB3E" font-family="Arial, sans-serif" font-weight="900" font-size="12" letter-spacing="1">CRICKET</text>
+</svg>

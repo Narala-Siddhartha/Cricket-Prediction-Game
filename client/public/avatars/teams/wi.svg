@@ -1,0 +1,71 @@
+<svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Outer Circular Clip to guarantee pure circular silhouette like all other flags -->
+    <clipPath id="circleFrame">
+      <circle cx="100" cy="100" r="98"/>
+    </clipPath>
+
+    <!-- Shield Inner Clip Path -->
+    <clipPath id="shieldInnerClip">
+      <path d="M100 28 C112 37 127 37 141 31 C147 37 155 50 151 69 C147 88 157 113 153 126 C145 147 123 162 100 175 C77 162 55 147 47 126 C43 113 53 88 49 69 C45 50 53 37 59 31 C73 37 88 37 100 28 Z"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#circleFrame)">
+    <!-- Circular Deep Maroon Background -->
+    <circle cx="100" cy="100" r="98" fill="#700018"/>
+
+    <!-- Outer Golden Shield Border -->
+    <path d="M100 24 C113 34 129 34 144 28 C151 34 160 49 155 70 C151 90 162 115 158 129 C149 152 125 168 100 182 C75 168 51 152 42 129 C38 115 49 90 45 70 C40 49 49 34 56 28 C71 34 87 34 100 24 Z"
+          fill="#FFC20E"/>
+
+    <!-- Inner Maroon Accent Line -->
+    <path d="M100 26.5 C112.5 35.5 128 35.5 142.5 29.5 C149 35.5 157.5 49.5 153 69.5 C149 89 159.5 114 155.5 127.5 C147 149.5 124 165 100 178.5 C76 165 53 149.5 44.5 127.5 C40.5 114 51 89 47 69.5 C42.5 49.5 51 35.5 57.5 29.5 C72 35.5 87.5 35.5 100 26.5 Z"
+          fill="#700018"/>
+
+    <!-- Shield Interior Graphic -->
+    <g clip-path="url(#shieldInnerClip)">
+      <!-- Sky Blue Upper Field -->
+      <rect x="20" y="20" width="160" height="90" fill="#50BDE7"/>
+
+      <!-- Ocean Blue Lower Seascape -->
+      <rect x="20" y="110" width="160" height="80" fill="#0077B6"/>
+
+      <!-- Golden Sun in Top Right -->
+      <circle cx="134" cy="58" r="19" fill="#FFC20E"/>
+
+      <!-- Green Island Mound -->
+      <path d="M64 158 C64 125 84 120 100 120 C116 120 136 125 136 158 Z" fill="#009A44"/>
+
+      <!-- Palm Tree Curved Trunk -->
+      <path d="M80 76 C74 93 72 118 90 158 L82 158 C65 118 67 93 74 76 Z" fill="#783416"/>
+
+      <!-- Palm Fronds -->
+      <path d="M77 76 L80 44 L83 76 Z" fill="#009A44"/>
+      <polygon points="80,34 76,46 80,44 84,46" fill="#009A44"/>
+
+      <!-- Left Fronds -->
+      <path d="M78 72 C65 63 52 62 48 64 C56 68 64 72 76 75 Z" fill="#009A44"/>
+      <path d="M77 63 C68 53 58 51 53 53 C60 57 67 61 76 66 Z" fill="#009A44"/>
+      <path d="M79 54 C73 45 64 43 60 44 C66 48 71 51 78 55 Z" fill="#009A44"/>
+
+      <!-- Right Fronds -->
+      <path d="M80 72 C93 63 106 62 110 64 C102 68 94 72 82 75 Z" fill="#009A44"/>
+      <path d="M81 63 C90 53 100 51 105 53 C98 57 91 61 82 66 Z" fill="#009A44"/>
+      <path d="M79 54 C85 45 94 43 98 44 C92 48 87 51 80 55 Z" fill="#009A44"/>
+
+      <!-- Drooping Outer Fronds -->
+      <path d="M75 76 C62 74 48 81 45 86 C54 83 64 80 75 78 Z" fill="#009A44"/>
+      <path d="M83 76 C96 74 110 81 113 86 C104 83 94 80 83 78 Z" fill="#009A44"/>
+
+      <!-- Golden Cricket Wickets and Bails -->
+      <rect x="105" y="96" width="3.5" height="50" rx="1.5" fill="#FFC20E"/>
+      <rect x="112" y="96" width="3.5" height="50" rx="1.5" fill="#FFC20E"/>
+      <rect x="119" y="96" width="3.5" height="50" rx="1.5" fill="#FFC20E"/>
+      <rect x="103.5" y="95" width="20.5" height="3" rx="1" fill="#FFC20E"/>
+    </g>
+
+    <!-- Outer Circular Gold Trim to match other circular badges -->
+    <circle cx="100" cy="100" r="97" stroke="#FFC20E" stroke-width="2.5" fill="none"/>
+  </g>
+</svg>

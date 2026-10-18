@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { api, getErrorMessage } from './api.js';
+import { TeamAvatar, TeamMatchup } from './components/TeamAvatar.jsx';
 
 const emptyAuth = { email: '', password: '', name: '' };
 
@@ -369,9 +370,7 @@ function AdminDashboard() {
                   <strong className="match-title">{match.name}</strong>
 
                   <div className="team-names-row">
-                    <span className="team-pill">{match.teams[0]?.shortName || match.teams[0]?.name}</span>
-                    <span className="vs-tag">vs</span>
-                    <span className="team-pill">{match.teams[1]?.shortName || match.teams[1]?.name}</span>
+                    <TeamMatchup teams={match.teams} size={34} />
                   </div>
 
                   <div className="match-meta">
@@ -396,6 +395,9 @@ function AdminDashboard() {
         {selected && (
           <div className="contest-editor">
             <div className="editor-heading">
+              <div className="editor-matchup-banner">
+                <TeamMatchup teams={selected.teams} size={46} />
+              </div>
               <h3>Publish Contest for: {selected.name}</h3>
               <p>Configure points and lock time before players place their bets.</p>
             </div>
@@ -542,6 +544,7 @@ function ContestCard({ contest, prediction, onPredict }) {
           <span className="format-badge">{contest.matchType?.toUpperCase() || 'CRICKET'}</span>
           <span className={`status-pill ${contest.status}`}>{contest.status}</span>
         </div>
+        <TeamMatchup teams={contest.teams} size={34} />
         <strong>{contest.name}</strong>
         <span><MapPin size={12} /> {contest.venue || 'Venue TBA'} | {formatDate(contest.dateTimeGMT)}</span>
         <small className="lock-time-text">
@@ -556,19 +559,21 @@ function ContestCard({ contest, prediction, onPredict }) {
             <button
               key={team.name}
               disabled={isLocked}
-              className={`${isSelected ? 'selected-team' : ''}`}
+              className={`team-pick-button ${isSelected ? 'selected-team' : ''}`}
               onClick={() => onPredict(contest._id, team.name)}
               title={isLocked ? 'Prediction locked' : `Predict ${team.name}`}
             >
-              {team.shortName || team.name}
+              <TeamAvatar teamName={team.name} shortName={team.shortName} size={28} />
+              <span>{team.shortName || team.name}</span>
             </button>
           );
         })}
       </div>
 
       {prediction && (
-        <span className={`badge ${prediction.outcome}`}>
-          {prediction.outcome.toUpperCase()} | Picked: {prediction.predictedWinner}
+        <span className={`badge ${prediction.outcome} prediction-badge-with-avatar`}>
+          <TeamAvatar teamName={prediction.predictedWinner} size={20} />
+          <span>{prediction.outcome.toUpperCase()} | Picked: {prediction.predictedWinner}</span>
           {prediction.scoreDelta !== 0 && ` (${prediction.scoreDelta > 0 ? '+' : ''}${prediction.scoreDelta} pts)`}
         </span>
       )}
@@ -587,9 +592,9 @@ function ContestTable({ contests, onSync, syncingId }) {
     <div className="table">
       {contests.map((contest) => (
         <div className="table-row" key={contest._id}>
-          <div>
-            <strong>{contest.name}</strong>
-            <span>{formatDate(contest.dateTimeGMT)}</span>
+          <div className="table-matchup-cell">
+            <TeamMatchup teams={contest.teams} size={30} />
+            <small className="match-subtext">{formatDate(contest.dateTimeGMT)}</small>
             {contest.resultText && <small className="result-subtext">{contest.resultText}</small>}
           </div>
           <span className={`badge ${contest.status}`}>{contest.status}</span>
