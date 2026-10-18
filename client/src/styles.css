@@ -331,9 +331,10 @@ input:focus {
   background: #fbfcf8;
 }
 
-.row div, .table-row div {
-  display: grid;
-  gap: 3px;
+.row > div, .table-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .row span, .table-row span, .contest-card span, .contest-card small, .muted {
@@ -549,6 +550,85 @@ input:focus {
   margin: 2px 0;
 }
 
+/* Team Avatars & Matchup Styling */
+.team-avatar-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.team-avatar-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.team-matchup-row {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+  background: #f4f7f2;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #d9e3d6;
+  width: fit-content !important;
+  max-width: 100%;
+}
+
+.matchup-team-pill {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-weight: 800;
+  font-size: 0.88rem;
+  color: #17201b;
+}
+
+.matchup-team-title {
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.matchup-vs-tag {
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: #55665d;
+  background: #ffffff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid #d0dcd0;
+  letter-spacing: 0.06em;
+  display: inline-block;
+}
+
+.editor-matchup-banner {
+  margin-bottom: 12px;
+}
+
+.editor-matchup-banner .team-matchup-row {
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #cfe0cd;
+  box-shadow: 0 4px 14px rgba(16, 63, 52, 0.06);
+}
+
+.editor-matchup-banner .matchup-team-pill {
+  font-size: 1rem;
+  gap: 10px;
+}
+
+.editor-matchup-banner .matchup-vs-tag {
+  font-size: 0.78rem;
+  padding: 4px 8px;
+  background: #103f34;
+  color: #ffffff;
+  border: none;
+}
+
 .team-pill {
   display: inline-block;
   background: #eef2ec;
@@ -666,31 +746,64 @@ input:focus {
   font-weight: 700;
 }
 
-.team-actions button {
-  min-width: 80px;
-  height: 40px;
+.team-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.team-actions button, .team-pick-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 100px;
+  height: 42px;
+  padding: 0 14px;
   border: 1px solid #d7ddd4;
   border-radius: 8px;
   background: #ffffff;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  color: #17201b;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.team-actions button:hover:not(:disabled) {
+.team-actions button:hover:not(:disabled), .team-pick-button:hover:not(:disabled) {
   border-color: #103f34;
   background: #f2f7f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 63, 52, 0.1);
 }
 
-.team-actions button:disabled {
+.team-actions button:disabled, .team-pick-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+  transform: none;
 }
 
-.team-actions .selected-team {
-  border-color: #c8313a;
-  background: #faeaec;
-  color: #c8313a;
-  box-shadow: 0 0 0 2px rgba(200, 49, 58, 0.2);
+.team-actions .selected-team, .team-pick-button.selected-team {
+  border-color: #103f34;
+  background: #eef7f2;
+  color: #103f34;
+  box-shadow: 0 0 0 2px #103f34, 0 4px 12px rgba(16, 63, 52, 0.15);
+}
+
+.prediction-badge-with-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.table-matchup-cell {
+  display: grid;
+  gap: 5px;
+}
+
+.match-subtext {
+  font-size: 0.8rem;
+  color: #617066;
 }
 
 .badge {
@@ -721,8 +834,23 @@ input:focus {
 }
 
 .table-row {
+  min-height: 64px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(260px, 1fr) auto auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  background: #ffffff;
+  border: 1px solid #edf0ea;
+  border-radius: 10px;
+}
+
+.table-matchup-cell {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+  width: fit-content;
 }
 
 .spin {
@@ -748,15 +876,31 @@ input:focus {
     font-size: 2.7rem;
   }
 
-  .match-search, .contest-editor, .contest-card, .table-row {
+  .match-search, .contest-editor, .contest-card {
     grid-template-columns: 1fr;
   }
 
-  .team-actions {
-    justify-content: stretch;
+  .table-row {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
   }
 
-  .team-actions button {
-    flex: 1;
+  .team-actions {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .team-actions button, .team-pick-button {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 120px;
+    height: 44px;
+  }
+
+  .team-matchup-row {
+    max-width: 100%;
+    flex-wrap: wrap;
   }
 }

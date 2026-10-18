@@ -1,0 +1,17 @@
+<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradTeamB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#DC2626" />
+      <stop offset="100%" stop-color="#991B1B" />
+    </linearGradient>
+    <filter id="shadowB" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <circle cx="50" cy="50" r="46" fill="url(#gradTeamB)" stroke="#FCA5A5" stroke-width="4" filter="url(#shadowB)"/>
+  <circle cx="50" cy="50" r="39" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-dasharray="4 3"/>
+  <!-- Stylized Letter B -->
+  <path d="M36 24H52C58 24 62 27 62 33C62 37 59 40 55 42C60 44 64 48 64 54C64 61 58 66 51 66H36V24ZM45 33V41H51C53 41 55 39 55 37C55 35 53 33 51 33H45ZM45 49V58H52C54 58 56 56 56 53.5C56 51 54 49 52 49H45Z" fill="#FFFFFF"/>
+  <!-- Accent Cricket Ball Dot -->
+  <circle cx="50" cy="74" r="3.5" fill="#F59E0B" stroke="#FFFFFF" stroke-width="1"/>
+</svg>
