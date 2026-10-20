@@ -8,7 +8,7 @@ router.use(requireAuth, requireApproved);
 
 router.get('/', asyncHandler(async (_req, res) => {
   const users = await User.find({ role: 'user', status: 'approved' })
-    .select('name email totalScore')
+    .select('name email totalScore avatar')
     .sort({ totalScore: -1, name: 1 });
 
   res.json({
@@ -17,7 +17,8 @@ router.get('/', asyncHandler(async (_req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      totalScore: user.totalScore
+      totalScore: user.totalScore,
+      avatar: user.avatar || 'cric-captain'
     }))
   });
 }));

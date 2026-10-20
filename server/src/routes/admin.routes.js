@@ -72,4 +72,44 @@ router.post('/contests/:id/sync-result', asyncHandler(async (req, res) => {
   res.json({ contest: updated });
 }));
 
+router.get('/profile-requests', asyncHandler(async (_req, res) => {
+  const users = await User.find({ 'pendingUpdate.status': 'pending' }).sort({ 'pendingUpdate.requestedAt': -1 });
+  const requests = users.map((u) => ({
+    userId: u._id,
+    currentName: u.name,
+    email: u.email,
+    avatar: u.avatar || 'cric-captain',
+    requestedName: u.pendingUpdate?.name || null,
+    hasPasswordChange: Boolean(u.pendingUpdate?.passwordHash),
+    requestedAt: u.pendingUpdate?.requestedAt
+  }));
+  res.json({ requests });
+}));
+
+router.post('/profile-requests/:id/approve', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user || user.pendingUpdate?.status !== 'pending') {
+    throw new AppError('No pending profile request found for this user', 404);
+  }
+  if (user.pendingUpdate.name) {
+    user.name = user.pendingUpdate.name;
+  }
+  if (user.pendingUpdate.passwordHash) {
+    user.passwordHash = user.pendingUpdate.passwordHash;
+  }
+  user.pendingUpdate = { name: null, passwordHash: null, requestedAt: null, status: 'none' };
+  await user.save();
+  res.json({ message: 'Profile changes approved successfully.', user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+}));
+
+router.post('/profile-requests/:id/reject', asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user || user.pendingUpdate?.status !== 'pending') {
+    throw new AppError('No pending profile request found for this user', 404);
+  }
+  user.pendingUpdate = { name: null, passwordHash: null, requestedAt: null, status: 'none' };
+  await user.save();
+  res.json({ message: 'Profile change request rejected.' });
+}));
+
 export default router;

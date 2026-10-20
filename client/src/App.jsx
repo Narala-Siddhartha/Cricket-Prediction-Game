@@ -5,6 +5,8 @@ import {
   Check,
   Clock,
   Crown,
+  Flame,
+  KeyRound,
   LogOut,
   MapPin,
   RefreshCcw,
@@ -12,11 +14,16 @@ import {
   ShieldCheck,
   Sparkles,
   Trophy,
+  User,
   Users,
   X
 } from 'lucide-react';
 import { api, getErrorMessage } from './api.js';
 import { TeamAvatar, TeamMatchup } from './components/TeamAvatar.jsx';
+import { UserAvatar } from './components/UserAvatar.jsx';
+import { LeaderboardPage } from './components/LeaderboardPage.jsx';
+import { ProfilePage } from './components/ProfilePage.jsx';
+import { AdminProfileRequests } from './components/AdminProfileRequests.jsx';
 
 const emptyAuth = { email: '', password: '', name: '' };
 
@@ -44,34 +51,127 @@ function App() {
   const [user, setUser] = useState(null);
   const [loadingMe, setLoadingMe] = useState(Boolean(token));
 
-  useEffect(() => {
+  // Page routing: 'contests' | 'leaderboard' | 'profile' | 'admin' | 'profile-requests'
+  const [currentPage, setCurrentPage] = useState('contests');
+
+  // Shared leaderboard state
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false);
+
+  // Admin profile requests state
+  const [profileRequests, setProfileRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [requestActionId, setRequestActionId] = useState(null);
+
+  async function loadMe() {
     if (!token) {
       setLoadingMe(false);
       return;
     }
-    api.get('/auth/me')
-      .then((response) => setUser(response.data.user))
-      .catch(() => {
-        localStorage.removeItem('cricket_token');
-        setToken(null);
-      })
-      .finally(() => setLoadingMe(false));
+    try {
+      const response = await api.get('/auth/me');
+      setUser(response.data.user);
+      if (response.data.user.role === 'admin') {
+        setCurrentPage((prev) => (prev === 'contests' ? 'admin' : prev));
+      }
+    } catch {
+      localStorage.removeItem('cricket_token');
+      setToken(null);
+      setUser(null);
+    } finally {
+      setLoadingMe(false);
+    }
+  }
+
+  async function fetchLeaderboard() {
+    if (!token) return;
+    setLoadingLeaderboard(true);
+    try {
+      const response = await api.get('/leaderboard');
+      setLeaderboard(response.data.leaderboard || []);
+    } catch {
+      // Ignored if user not approved yet
+    } finally {
+      setLoadingLeaderboard(false);
+    }
+  }
+
+  async function fetchProfileRequests() {
+    if (!token || user?.role !== 'admin') return;
+    setLoadingRequests(true);
+    try {
+      const response = await api.get('/admin/profile-requests');
+      setProfileRequests(response.data.requests || []);
+    } catch {
+      // Ignored
+    } finally {
+      setLoadingRequests(false);
+    }
+  }
+
+  useEffect(() => {
+    loadMe();
   }, [token]);
+
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.status === 'approved')) {
+      fetchLeaderboard();
+      if (user.role === 'admin') {
+        fetchProfileRequests();
+      }
+    }
+  }, [user]);
 
   function handleAuthSuccess(payload) {
     localStorage.setItem('cricket_token', payload.token);
     setToken(payload.token);
     setUser(payload.user);
+    setCurrentPage(payload.user.role === 'admin' ? 'admin' : 'contests');
   }
 
   function logout() {
     localStorage.removeItem('cricket_token');
     setToken(null);
     setUser(null);
+    setCurrentPage('contests');
+  }
+
+  function handleUserUpdated(updatedUser) {
+    setUser(updatedUser);
+    fetchLeaderboard();
+  }
+
+  async function handleApproveProfileRequest(userId) {
+    setRequestActionId(userId);
+    try {
+      await api.post(`/admin/profile-requests/${userId}/approve`);
+      await fetchProfileRequests();
+      await fetchLeaderboard();
+    } catch (err) {
+      alert(getErrorMessage(err));
+    } finally {
+      setRequestActionId(null);
+    }
+  }
+
+  async function handleRejectProfileRequest(userId) {
+    setRequestActionId(userId);
+    try {
+      await api.post(`/admin/profile-requests/${userId}/reject`);
+      await fetchProfileRequests();
+    } catch (err) {
+      alert(getErrorMessage(err));
+    } finally {
+      setRequestActionId(null);
+    }
   }
 
   if (loadingMe) {
-    return <Shell><div className="loader">Preparing your league room...</div></Shell>;
+    return (
+      <Shell>
+        <div className="loader">Preparing your league room...</div>
+      </Shell>
+    );
   }
 
   if (!token || !user) {
@@ -80,7 +180,12 @@ function App() {
 
   if (user.role !== 'admin' && user.status !== 'approved') {
     return (
-      <Shell user={user} onLogout={logout}>
+      <Shell
+        user={user}
+        onLogout={logout}
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+      >
         <section className="empty-state">
           <ShieldCheck size={44} />
           <h1>Approval pending</h1>
@@ -91,28 +196,250 @@ function App() {
   }
 
   return (
-    <Shell user={user} onLogout={logout}>
-      {user.role === 'admin' ? <AdminDashboard /> : <UserDashboard currentUser={user} />}
+    <Shell
+      user={user}
+      onLogout={logout}
+      currentPage={currentPage}
+      onNavigate={setCurrentPage}
+      profileRequestsCount={profileRequests.length}
+    >
+      {/* 1. Dedicated Leaderboard Page */}
+      {currentPage === 'leaderboard' && (
+        <LeaderboardPage
+          leaderboard={leaderboard}
+          currentUser={user}
+          loading={loadingLeaderboard}
+          onRefresh={fetchLeaderboard}
+        />
+      )}
+
+      {/* 2. Dedicated Profile Page */}
+      {currentPage === 'profile' && (
+        <ProfilePage
+          user={user}
+          onUserUpdated={handleUserUpdated}
+        />
+      )}
+
+      {/* 3. Admin Profile Requests Page */}
+      {currentPage === 'profile-requests' && user.role === 'admin' && (
+        <AdminProfileRequests
+          requests={profileRequests}
+          onApprove={handleApproveProfileRequest}
+          onReject={handleRejectProfileRequest}
+          loading={loadingRequests}
+          onRefresh={fetchProfileRequests}
+          actionId={requestActionId}
+        />
+      )}
+
+      {/* 4. Admin Dashboard */}
+      {currentPage === 'admin' && user.role === 'admin' && (
+        <AdminDashboard
+          onOpenProfileRequests={() => setCurrentPage('profile-requests')}
+          profileRequestsCount={profileRequests.length}
+        />
+      )}
+
+      {/* 5. User Contests Dashboard */}
+      {currentPage === 'contests' && (
+        <UserDashboard
+          currentUser={user}
+          onNavigate={setCurrentPage}
+        />
+      )}
     </Shell>
   );
 }
 
-function Shell({ children, user, onLogout }) {
+function Shell({
+  children,
+  user,
+  onLogout,
+  currentPage = 'contests',
+  onNavigate = () => {},
+  profileRequestsCount = 0
+}) {
   return (
     <main className="app-shell">
       <nav className="topbar">
-        <div className="brand">
+        <div
+          className="brand clickable"
+          onClick={() => onNavigate(user?.role === 'admin' ? 'admin' : 'contests')}
+        >
           <span className="brand-mark"><Trophy size={20} /></span>
-          <span>Prediction League</span>
+          <span className="brand-text">Cricket League</span>
         </div>
+
+        {user && (
+          <div className="nav-tabs-desktop">
+            {user.role === 'admin' ? (
+              <>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'admin' ? 'active' : ''}`}
+                  onClick={() => onNavigate('admin')}
+                >
+                  <Crown size={16} />
+                  <span>Admin Console</span>
+                </button>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'profile-requests' ? 'active' : ''}`}
+                  onClick={() => onNavigate('profile-requests')}
+                >
+                  <KeyRound size={16} />
+                  <span>Profile Requests</span>
+                  {profileRequestsCount > 0 && (
+                    <span className="nav-badge-count">{profileRequestsCount}</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'leaderboard' ? 'active' : ''}`}
+                  onClick={() => onNavigate('leaderboard')}
+                >
+                  <Trophy size={16} />
+                  <span>Leaderboard</span>
+                </button>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'profile' ? 'active' : ''}`}
+                  onClick={() => onNavigate('profile')}
+                >
+                  <UserAvatar avatarId={user.avatar} size={20} />
+                  <span>Profile</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'contests' ? 'active' : ''}`}
+                  onClick={() => onNavigate('contests')}
+                >
+                  <Flame size={16} />
+                  <span>Contests</span>
+                </button>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'leaderboard' ? 'active' : ''}`}
+                  onClick={() => onNavigate('leaderboard')}
+                >
+                  <Trophy size={16} />
+                  <span>Leaderboard</span>
+                </button>
+                <button
+                  type="button"
+                  className={`nav-tab-btn ${currentPage === 'profile' ? 'active' : ''}`}
+                  onClick={() => onNavigate('profile')}
+                >
+                  <UserAvatar avatarId={user.avatar} size={20} />
+                  <span>Profile</span>
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
         {user && (
           <div className="user-strip">
-            <span>{user.name}</span>
-            <button className="icon-button" onClick={onLogout} title="Logout"><LogOut size={18} /></button>
+            <button
+              type="button"
+              className="user-profile-chip"
+              onClick={() => onNavigate('profile')}
+              title="View & Edit Profile"
+            >
+              <UserAvatar avatarId={user.avatar} size={34} />
+              <div className="chip-details">
+                <span className="chip-name">{user.name}</span>
+                {user.role === 'user' && (
+                  <span className="chip-score">{user.totalScore} pts</span>
+                )}
+              </div>
+            </button>
+            <button className="icon-button logout-btn" onClick={onLogout} title="Logout">
+              <LogOut size={18} />
+            </button>
           </div>
         )}
       </nav>
-      {children}
+
+      <div className="app-main-content">
+        {children}
+      </div>
+
+      {/* Sticky Mobile Bottom Navigation Bar */}
+      {user && (
+        <nav className="mobile-bottom-nav">
+          {user.role === 'admin' ? (
+            <>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'admin' ? 'active' : ''}`}
+                onClick={() => onNavigate('admin')}
+              >
+                <Crown size={20} />
+                <span>Console</span>
+              </button>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'profile-requests' ? 'active' : ''}`}
+                onClick={() => onNavigate('profile-requests')}
+              >
+                <div className="icon-with-badge">
+                  <KeyRound size={20} />
+                  {profileRequestsCount > 0 && <span className="mobile-dot-badge">{profileRequestsCount}</span>}
+                </div>
+                <span>Requests</span>
+              </button>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'leaderboard' ? 'active' : ''}`}
+                onClick={() => onNavigate('leaderboard')}
+              >
+                <Trophy size={20} />
+                <span>Board</span>
+              </button>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'profile' ? 'active' : ''}`}
+                onClick={() => onNavigate('profile')}
+              >
+                <UserAvatar avatarId={user.avatar} size={22} />
+                <span>Profile</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'contests' ? 'active' : ''}`}
+                onClick={() => onNavigate('contests')}
+              >
+                <Flame size={20} />
+                <span>Contests</span>
+              </button>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'leaderboard' ? 'active' : ''}`}
+                onClick={() => onNavigate('leaderboard')}
+              >
+                <Trophy size={20} />
+                <span>Board</span>
+              </button>
+              <button
+                type="button"
+                className={`mobile-nav-item ${currentPage === 'profile' ? 'active' : ''}`}
+                onClick={() => onNavigate('profile')}
+              >
+                <UserAvatar avatarId={user.avatar} size={22} />
+                <span>Profile</span>
+              </button>
+            </>
+          )}
+        </nav>
+      )}
     </main>
   );
 }
@@ -170,7 +497,7 @@ function AuthScreen({ onSuccess }) {
   );
 }
 
-function AdminDashboard() {
+function AdminDashboard({ onOpenProfileRequests, profileRequestsCount = 0 }) {
   const [users, setUsers] = useState([]);
   const [apiMatches, setApiMatches] = useState([]);
   const [contests, setContests] = useState([]);
@@ -212,7 +539,6 @@ function AdminDashboard() {
 
   useEffect(() => {
     loadAdminData().catch((error) => setMessage(getErrorMessage(error)));
-    // Automatically load current and upcoming matches on mount
     executeSearch('');
   }, []);
 
@@ -289,13 +615,35 @@ function AdminDashboard() {
         {message && <p className="form-message">{message}</p>}
       </section>
 
+      {/* Notification Banner for Pending Profile Change Requests */}
+      {profileRequestsCount > 0 && (
+        <section className="panel alert-panel" onClick={onOpenProfileRequests} style={{ cursor: 'pointer' }}>
+          <div className="alert-content">
+            <KeyRound size={22} className="alert-key-icon" />
+            <div>
+              <strong>{profileRequestsCount} Player Profile Request{profileRequestsCount > 1 ? 's' : ''} Awaiting Review</strong>
+              <p>Players have submitted name or password changes for admin approval.</p>
+            </div>
+          </div>
+          <button className="primary-button compact-btn" onClick={onOpenProfileRequests}>
+            Review Now
+          </button>
+        </section>
+      )}
+
       <section className="panel">
-        <h2><Users size={18} /> Pending users</h2>
+        <h2><Users size={18} /> Pending player registrations</h2>
         <div className="list">
           {pendingUsers.length === 0 && <p className="muted">No pending registrations.</p>}
           {pendingUsers.map((candidate) => (
             <div className="row" key={candidate._id}>
-              <div><strong>{candidate.name}</strong><span>{candidate.email}</span></div>
+              <div className="user-candidate-info">
+                <UserAvatar avatarId={candidate.avatar} size={36} />
+                <div>
+                  <strong>{candidate.name}</strong>
+                  <span>{candidate.email}</span>
+                </div>
+              </div>
               <div className="actions">
                 <button className="icon-button success" onClick={() => updateUserStatus(candidate._id, 'approved')} title="Approve"><Check size={17} /></button>
                 <button className="icon-button danger" onClick={() => updateUserStatus(candidate._id, 'rejected')} title="Reject"><X size={17} /></button>
@@ -387,7 +735,7 @@ function AdminDashboard() {
 
         {searchedQuery && !searching && apiMatches.length === 0 && (
           <div className="no-matches-box">
-            <p>No matches found matching "{searchedQuery}".</p>
+            <p>No matches found matching &quot;{searchedQuery}&quot;.</p>
             <small>Try searching for a country (e.g. India, Australia, England) or a league (e.g. IPL, BBL).</small>
           </div>
         )}
@@ -458,20 +806,15 @@ function AdminDashboard() {
   );
 }
 
-function UserDashboard({ currentUser }) {
+function UserDashboard({ currentUser, onNavigate }) {
   const [contests, setContests] = useState([]);
   const [predictions, setPredictions] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
   const [message, setMessage] = useState('');
 
   async function loadData() {
-    const [contestRes, leaderRes] = await Promise.all([
-      api.get('/contests'),
-      api.get('/leaderboard')
-    ]);
+    const contestRes = await api.get('/contests');
     setContests(contestRes.data.contests);
     setPredictions(contestRes.data.predictions);
-    setLeaderboard(leaderRes.data.leaderboard);
   }
 
   useEffect(() => {
@@ -494,30 +837,40 @@ function UserDashboard({ currentUser }) {
 
   return (
     <div className="dashboard-grid">
-      <section className="panel hero-panel">
-        <p className="eyebrow">Your score</p>
-        <h1>{currentUser.totalScore} points</h1>
-        <p>Pick winners before each contest locks. Correct predictions win points; misses subtract them.</p>
+      <section className="panel hero-panel user-hero-panel">
+        <div className="user-hero-top">
+          <UserAvatar avatarId={currentUser.avatar} size={72} />
+          <div>
+            <p className="eyebrow">Welcome back, {currentUser.name}</p>
+            <h1>{currentUser.totalScore} Points</h1>
+            <p>Pick winners before each contest locks. Correct predictions win points; misses subtract them.</p>
+          </div>
+        </div>
+
+        <div className="hero-button-group">
+          <button className="primary-button" onClick={() => onNavigate('leaderboard')}>
+            <Trophy size={16} /> View Animated Leaderboard
+          </button>
+          <button className="secondary-button" onClick={() => onNavigate('profile')}>
+            <User size={16} /> Edit Profile & Avatar
+          </button>
+        </div>
+
+        {currentUser.pendingUpdate && (
+          <div className="hero-pending-alert" onClick={() => onNavigate('profile')}>
+            <Clock size={16} className="spin-slow" />
+            <span>You have a profile change request pending admin approval. Click to view status.</span>
+          </div>
+        )}
+
         {message && <p className="form-message">{message}</p>}
       </section>
 
-      <section className="panel">
-        <h2><Trophy size={18} /> Leaderboard</h2>
-        <div className="list">
-          {leaderboard.length === 0 && <p className="muted">No players yet.</p>}
-          {leaderboard.map((entry) => (
-            <div className={`row compact ${entry.name === currentUser.name ? 'current-user-row' : ''}`} key={entry.id}>
-              <span>
-                <strong className={`rank-tag rank-${entry.rank}`}>#{entry.rank}</strong> {entry.name}
-              </span>
-              <strong>{entry.totalScore} pts</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="panel wide">
-        <h2>Open contests</h2>
+        <div className="panel-header-row">
+          <h2>Active Contests</h2>
+          <span className="live-indicator"><Activity size={14} /> Live League Matches</span>
+        </div>
         <div className="contest-list">
           {contests.length === 0 && <p className="muted">No active contests at the moment. Ask your admin to publish matches!</p>}
           {contests.map((contest) => (

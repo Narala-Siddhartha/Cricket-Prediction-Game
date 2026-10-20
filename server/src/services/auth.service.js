@@ -14,13 +14,25 @@ export function toSafeUser(user) {
     email: user.email,
     role: user.role,
     status: user.status,
-    totalScore: user.totalScore
+    totalScore: user.totalScore,
+    avatar: user.avatar || 'cric-captain',
+    pendingUpdate: user.pendingUpdate && user.pendingUpdate.status === 'pending' ? {
+      name: user.pendingUpdate.name || null,
+      hasPasswordChange: Boolean(user.pendingUpdate.passwordHash),
+      requestedAt: user.pendingUpdate.requestedAt,
+      status: user.pendingUpdate.status
+    } : null
   };
 }
 
-export async function registerUser({ name, email, password }) {
+export async function registerUser({ name, email, password, avatar }) {
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await User.create({ name, email, passwordHash });
+  const user = await User.create({
+    name,
+    email,
+    passwordHash,
+    avatar: avatar || 'cric-captain'
+  });
   return toSafeUser(user);
 }
 

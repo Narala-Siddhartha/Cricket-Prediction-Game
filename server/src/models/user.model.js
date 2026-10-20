@@ -7,7 +7,14 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ['admin', 'user'], default: 'user' },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-    totalScore: { type: Number, default: 0 }
+    totalScore: { type: Number, default: 0 },
+    avatar: { type: String, default: 'cric-captain' },
+    pendingUpdate: {
+      name: { type: String, trim: true, default: null },
+      passwordHash: { type: String, default: null },
+      requestedAt: { type: Date, default: null },
+      status: { type: String, enum: ['none', 'pending'], default: 'none' }
+    }
   },
   { timestamps: true }
 );
